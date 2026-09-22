@@ -10,33 +10,63 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ContactRouteImport } from './routes/contact'
+import { Route as ServiceableAreasRouteImport } from './routes/serviceable-areas'
+import { Route as WhyHelixRouteImport } from './routes/why-helix'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ContactRoute = ContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ServiceableAreasRoute = ServiceableAreasRouteImport.update({
+  id: '/serviceable-areas',
+  path: '/serviceable-areas',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WhyHelixRoute = WhyHelixRouteImport.update({
+  id: '/why-helix',
+  path: '/why-helix',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/contact': typeof ContactRoute
+  '/serviceable-areas': typeof ServiceableAreasRoute
+  '/why-helix': typeof WhyHelixRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/contact': typeof ContactRoute
+  '/serviceable-areas': typeof ServiceableAreasRoute
+  '/why-helix': typeof WhyHelixRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/contact': typeof ContactRoute
+  '/serviceable-areas': typeof ServiceableAreasRoute
+  '/why-helix': typeof WhyHelixRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/contact' | '/serviceable-areas' | '/why-helix'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/contact' | '/serviceable-areas' | '/why-helix'
+  id: '__root__' | '/' | '/contact' | '/serviceable-areas' | '/why-helix'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ContactRoute: typeof ContactRoute
+  ServiceableAreasRoute: typeof ServiceableAreasRoute
+  WhyHelixRoute: typeof WhyHelixRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +78,35 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/contact': {
+      id: '/contact'
+      path: '/contact'
+      fullPath: '/contact'
+      preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/serviceable-areas': {
+      id: '/serviceable-areas'
+      path: '/serviceable-areas'
+      fullPath: '/serviceable-areas'
+      preLoaderRoute: typeof ServiceableAreasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/why-helix': {
+      id: '/why-helix'
+      path: '/why-helix'
+      fullPath: '/why-helix'
+      preLoaderRoute: typeof WhyHelixRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ContactRoute: ContactRoute,
+  ServiceableAreasRoute: ServiceableAreasRoute,
+  WhyHelixRoute: WhyHelixRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
