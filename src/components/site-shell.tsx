@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import logoAsset from "@/assets/helix-logistics-logo.png.asset.json";
 
 const navItems = [
+  { to: "/", label: "Home" },
   { to: "/why-helix", label: "Why Helix" },
   { to: "/serviceable-areas", label: "Serviceable Areas" },
   { to: "/contact", label: "Contact Us" },
