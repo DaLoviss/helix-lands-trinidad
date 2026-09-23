@@ -46,6 +46,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
                 to={item.to}
                 className="border-b-2 border-transparent pb-1 text-[11px] font-bold uppercase tracking-widest text-primary/70 transition-colors hover:border-accent hover:text-primary"
                 activeProps={{ className: "border-accent text-primary" }}
+                activeOptions={{ exact: true }}
               >
                 {item.label}
               </Link>
