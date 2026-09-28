@@ -32,17 +32,15 @@ jobs:
           USER: ${{ secrets.SFTP_USERNAME }}
           PORT: ${{ secrets.SFTP_PORT }}
         run: |
-          # 1. Setup a clean .ssh directory structure
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-          
-          # 2. Write and secure the private key file
-          echo "$SSH_KEY" > ~/.ssh/deploy_key
+
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          
-          # 3. Scan the SiteGround host fingerprint to clear security warnings
-          ssh-keyscan -p $PORT $HOST >> ~/.ssh/known_hosts
-          chmod 644 ~/.ssh/known_hosts
-          
-          # 4. Execute the sync command using your explicit port number
-          rsync -avz --delete -e "ssh -p $PORT -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" ./dist/ $USER@$HOST:/home/customer/www/gtxm1355.siteground.biz/public_html/
+
+          ssh-keyscan -p "$PORT" "$HOST" >> ~/.ssh/known_hosts
+
+          rsync -avz --delete \
+            -e "ssh -p $PORT -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes" \
+            ./dist/ \
+            "$USER@$HOST:/home/customer/www/gtxm1355.siteground.biz/public_html/"
