@@ -34,4 +34,4 @@ jobs:
 
       - name: 📂 Deploy files to SiteGround via Rsync
         run: |
-          rsync -e "ssh -p ${{ secrets.SFTP_PORT }} -i ~/.ssh/id_rsa" -avz --delete ./dist/ ${{ secrets.SFTP_USERNAME }}@${{ secrets.SFTP_SERVER }}:/home/${{ secrets.SFTP_USERNAME }}/public_html/
+          rsync -e "ssh -p ${{ secrets.SFTP_PORT }} -i ~/.ssh/id_rsa" -avz --delete ./dist/ ${{ secrets.SFTP_USERNAME }}@${{ secrets.SFTP_SERVER }}:/home/${{ secrets.SFTP_USERNAME }}/public_html/ 
