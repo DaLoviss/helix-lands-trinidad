@@ -25,16 +25,14 @@ jobs:
       - name: 📦 Build Project
         run: npm run build
 
-      - name: 🔑 Configure SSH Key
-        env:
+      - name: 📂 Deploy files to SiteGround via SSH
+        uses: easingthemes/ssh-deploy@v5.1.0
+        with:
           SSH_PRIVATE_KEY: ${{ secrets.SFTP_SSH_KEY }}
-        run: |
-          mkdir -p ~/.ssh
-          # Securely write the key using the environment variable string
-          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -p ${{ secrets.SFTP_PORT }} ${{ secrets.SFTP_SERVER }} >> ~/.ssh/known_hosts
-
-      - name: 📂 Deploy files to SiteGround via Rsync
-        run: |
-          rsync -e "ssh -p ${{ secrets.SFTP_PORT }} -i ~/.ssh/id_rsa" -avz --delete ./dist/ ${{ secrets.SFTP_USERNAME }}@${{ secrets.SFTP_SERVER }}:/home/${{ secrets.SFTP_USERNAME }}/public_html/ 
+          ARGS: "-avz --delete"
+          SERVER: ${{ secrets.SFTP_SERVER }}
+          PORT: ${{ secrets.SFTP_PORT }}
+          USER: ${{ secrets.SFTP_USERNAME }}
+          SOURCE: "dist/"
+          # SiteGround absolute path format uses /home/customer/www/hostname/public_html
+          TARGET: "/home/customer/www/gtxm1355.siteground.biz/public_html/"
