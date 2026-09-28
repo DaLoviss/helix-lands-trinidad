@@ -116,4 +116,4 @@ jobs:
           ssh \
             -p 18765 \
             "${{ secrets.SITEGROUND_USER }}@${{ secrets.SITEGROUND_HOST }}" \
-            "echo 'Files currently in public_html:' && ls -la /home/customer/www/helixlogisticstt.com/public_html/"
+            "echo 'Files currently in public_html:' && ls -la /home/customer/www/helixlogisticstt.com/public_html/" 
