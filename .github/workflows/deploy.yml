@@ -3,7 +3,7 @@ name: 🚀 Build and Deploy Lovable Site to SiteGround
 on:
   push:
     branches:
-      - main 
+      - main
 
 jobs:
   build-and-deploy:
@@ -18,12 +18,30 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'npm'
 
       - name: 🔨 Install Dependencies
         run: npm install
 
       - name: 📦 Build Project
         run: npm run build
+
+      - name: 🔍 Check Build Output
+        run: |
+          echo "Current directory:"
+          pwd
+
+          echo ""
+          echo "Files in project:"
+          ls -la
+
+          echo ""
+          echo "Looking for build directories:"
+          find . -maxdepth 3 -type d \( -name "dist" -o -name "build" \) -print
+
+          echo ""
+          echo "Contents of dist if it exists:"
+          ls -la dist 2>/dev/null || true
 
       - name: 📂 Deploy files to SiteGround via Rsync
         env:
@@ -43,4 +61,4 @@ jobs:
           rsync -avz --delete \
             -e "ssh -p $PORT -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes" \
             ./dist/ \
-            "$USER@$HOST:/home/customer/www/gtxm1355.siteground.biz/public_html/"
+            "$USER@$HOST:/home/customer/www/helixlogistictt.com/public_html/"
