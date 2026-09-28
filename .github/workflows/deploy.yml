@@ -1,90 +1,119 @@
-name: 🚀 Build and Deploy Lovable Site to SiteGround
+name: Build & Deploy to SiteGround
 
 on:
   push:
     branches:
       - main
 
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
 jobs:
   build-and-deploy:
-    name: 🎉 Build & Diagnose
+    name: Build and Deploy Website
     runs-on: ubuntu-latest
 
     steps:
-      - name: 🚚 Get latest code
-        uses: actions/checkout@v4
 
-      - name: ⚙️ Set up Node.js
-        uses: actions/setup-node@v4
+      # --------------------------------------------------
+      # 1. Get the latest code from GitHub
+      # --------------------------------------------------
+      - name: Get latest code
+        uses: actions/checkout@v5
+
+      # --------------------------------------------------
+      # 2. Set up Node.js
+      # --------------------------------------------------
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
         with:
-          node-version: '20'
+          node-version: 22
+          cache: npm
 
-      - name: 🔨 Install Dependencies
-        run: npm install
+      # --------------------------------------------------
+      # 3. Install dependencies
+      # --------------------------------------------------
+      - name: Install Dependencies
+        run: npm ci
 
-      - name: 📦 Build Project
+      # --------------------------------------------------
+      # 4. Build the website
+      # --------------------------------------------------
+      - name: Build Project
         run: npm run build
 
-      - name: 🔍 Diagnose Build and SiteGround
-        env:
-          SSH_KEY: ${{ secrets.SFTP_SSH_KEY }}
-          HOST: ${{ secrets.SFTP_SERVER }}
-          USER: ${{ secrets.SFTP_USERNAME }}
-          PORT: ${{ secrets.SFTP_PORT }}
+      # --------------------------------------------------
+      # 5. Confirm the static website was generated
+      # --------------------------------------------------
+      - name: Check Build Output
         run: |
-          echo "========================================"
-          echo "GITHUB BUILD DIRECTORY"
-          echo "========================================"
+          echo "Checking .output/public..."
 
-          echo "Current directory:"
-          pwd
-
-          echo ""
-          echo "Top-level files:"
-          ls -la
-
-          echo ""
-          echo "Looking for dist/build directories:"
-          find . -maxdepth 5 -type d \( -name "dist" -o -name "build" \) -print
+          if [ ! -d ".output/public" ]; then
+            echo "ERROR: .output/public does not exist."
+            echo ""
+            echo "Contents of the project:"
+            ls -la
+            exit 1
+          fi
 
           echo ""
-          echo "Package scripts:"
-          cat package.json | grep -A 10 '"scripts"'
+          echo "Build output:"
+          find .output/public -maxdepth 3 -type f | sort
 
           echo ""
-          echo "========================================"
-          echo "CONNECTING TO SITEGROUND"
-          echo "========================================"
+          echo "Build output size:"
+          du -sh .output/public
 
+      # --------------------------------------------------
+      # 6. Start SSH agent with SiteGround private key
+      # --------------------------------------------------
+      - name: Set up SSH key
+        uses: webfactory/ssh-agent@v0.9.1
+        with:
+          ssh-private-key: ${{ secrets.SITEGROUND_SSH_PRIVATE_KEY }}
+
+      # --------------------------------------------------
+      # 7. Add SiteGround to known hosts
+      # --------------------------------------------------
+      - name: Add SiteGround host key
+        run: |
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
 
-          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -p 18765 "${{ secrets.SITEGROUND_HOST }}" \
+            >> ~/.ssh/known_hosts
 
-          ssh-keyscan -p "$PORT" "$HOST" >> ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
 
+      # --------------------------------------------------
+      # 8. Test SSH connection
+      # --------------------------------------------------
+      - name: Test SiteGround SSH connection
+        run: |
           ssh \
-            -p "$PORT" \
-            -i ~/.ssh/deploy_key \
-            -o StrictHostKeyChecking=yes \
-            "$USER@$HOST" '
-              echo "HOME:"
-              echo "$HOME"
+            -p 18765 \
+            "${{ secrets.SITEGROUND_USER }}@${{ secrets.SITEGROUND_HOST }}" \
+            "echo 'SSH connection to SiteGround successful'"
 
-              echo ""
-              echo "HOME CONTENTS:"
-              ls -la "$HOME"
+      # --------------------------------------------------
+      # 9. Deploy website
+      # --------------------------------------------------
+      - name: Deploy files to SiteGround
+        run: |
+          rsync -avz --delete \
+            -e "ssh -p 18765" \
+            .output/public/ \
+            "${{ secrets.SITEGROUND_USER }}@${{ secrets.SITEGROUND_HOST }}:/home/customer/www/helixlogisticstt.com/public_html/"
 
-              echo ""
-              echo "WWW DIRECTORY:"
-              ls -la "$HOME/www" 2>/dev/null || true
-
-              echo ""
-              echo "CUSTOMER WWW:"
-              ls -la /home/customer/www 2>/dev/null || true
-
-              echo ""
-              echo "PUBLIC_HTML DIRECTORIES:"
-              find "$HOME" -maxdepth 5 -type d -name "public_html" -print 2>/dev/null
-            '
+      # --------------------------------------------------
+      # 10. Verify deployment
+      # --------------------------------------------------
+      - name: Verify SiteGround deployment
+        run: |
+          ssh \
+            -p 18765 \
+            "${{ secrets.SITEGROUND_USER }}@${{ secrets.SITEGROUND_HOST }}" \
+            "echo 'Files currently in public_html:' && ls -la /home/customer/www/helixlogisticstt.com/public_html/"
