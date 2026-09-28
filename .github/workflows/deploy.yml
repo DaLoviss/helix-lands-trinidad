@@ -31,7 +31,7 @@ jobs:
           SSH_PRIVATE_KEY: ${{ secrets.SFTP_SSH_KEY }}
           ARGS: "-avz --delete"
           REMOTE_HOST: ${{ secrets.SFTP_SERVER }}
-          PORT: ${{ secrets.SFTP_PORT }}
+          port: ${{ secrets.SFTP_PORT }}
           REMOTE_USER: ${{ secrets.SFTP_USERNAME }}
           SOURCE: "dist/"
           # SiteGround absolute path format uses /home/customer/www/hostname/public_html
