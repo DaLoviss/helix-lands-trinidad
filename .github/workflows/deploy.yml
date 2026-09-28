@@ -26,12 +26,12 @@ jobs:
         run: npm run build
 
       - name: 🔑 Configure SSH Key
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SFTP_SSH_KEY }}
         run: |
           mkdir -p ~/.ssh
-          # Using a heredoc structure preserves the exact newlines needed for the OpenSSH key format
-          cat << 'EOF' > ~/.ssh/id_rsa
-          ${{ secrets.SFTP_SSH_KEY }}
-          EOF
+          # Securely write the key using the environment variable string
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -p ${{ secrets.SFTP_PORT }} ${{ secrets.SFTP_SERVER }} >> ~/.ssh/known_hosts
 
