@@ -35,4 +35,4 @@ jobs:
           port: ${{ secrets.SFTP_PORT }}
           local_path: './dist/*' # Lovable/Vite compiles production files into the 'dist' folder
           remote_path: '/public_html' # Maps straight to your empty SiteGround container
-          delete_remote_files: true # Keeps your server clean by removing old files no longer in your code
+          delete_remote_files: true # Keeps your server clean by removing old files no longer in your code 
