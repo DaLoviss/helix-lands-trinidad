@@ -25,13 +25,13 @@ jobs:
       - name: 📦 Build Project
         run: npm run build
 
-      - name: 📂 Sync files to SiteGround via SFTP
-        uses: wlixcc/SFTP-Deploy-Action@v1.2.6
-        with:
-          server: ${{ secrets.SFTP_SERVER }}
-          username: ${{ secrets.SFTP_USERNAME }}
-          ssh_private_key: ${{ secrets.SFTP_SSH_KEY }} # Swapped out password for the secure SSH key
-          port: ${{ secrets.SFTP_PORT }}
-          local_path: './dist/*' 
-          remote_path: '/public_html' 
-          delete_remote_files: true 
+      - name: 🔑 Configure SSH Key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SFTP_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -p ${{ secrets.SFTP_PORT }} ${{ secrets.SFTP_SERVER }} >> ~/.ssh/known_hosts
+
+      - name: 📂 Deploy files to SiteGround via Rsync
+        run: |
+          rsync -e "ssh -p ${{ secrets.SFTP_PORT }} -i ~/.ssh/id_rsa" -avz --delete ./dist/ ${{ secrets.SFTP_USERNAME }}@${{ secrets.SFTP_SERVER }}:/home/${{ secrets.SFTP_USERNAME }}/public_html/
