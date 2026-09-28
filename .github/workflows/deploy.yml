@@ -28,10 +28,13 @@ jobs:
       - name: 🔑 Configure SSH Key
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.SFTP_SSH_KEY }}" > ~/.ssh/id_rsa
+          # Using a heredoc structure preserves the exact newlines needed for the OpenSSH key format
+          cat << 'EOF' > ~/.ssh/id_rsa
+          ${{ secrets.SFTP_SSH_KEY }}
+          EOF
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -p ${{ secrets.SFTP_PORT }} ${{ secrets.SFTP_SERVER }} >> ~/.ssh/known_hosts
 
       - name: 📂 Deploy files to SiteGround via Rsync
         run: |
-          rsync -e "ssh -p ${{ secrets.SFTP_PORT }} -i ~/.ssh/id_rsa" -avz --delete ./dist/ ${{ secrets.SFTP_USERNAME }}@${{ secrets.SFTP_SERVER }}:/home/${{ secrets.SFTP_USERNAME }}/public_html/ 
+          rsync -e "ssh -p ${{ secrets.SFTP_PORT }} -i ~/.ssh/id_rsa" -avz --delete ./dist/ ${{ secrets.SFTP_USERNAME }}@${{ secrets.SFTP_SERVER }}:/home/${{ secrets.SFTP_USERNAME }}/public_html/
