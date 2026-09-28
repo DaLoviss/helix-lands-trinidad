@@ -1,0 +1,38 @@
+name: 🚀 Build and Deploy Lovable Site to SiteGround
+
+on:
+  push:
+    branches:
+      - main # Triggers the workflow every time you push or sync from Lovable to main
+
+jobs:
+  build-and-deploy:
+    name: 🎉 Build & SFTP Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🚚 Get latest code
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: 🔨 Install Dependencies
+        run: npm ci
+
+      - name: 📦 Build Project
+        run: npm run build
+
+      - name: 📂 Sync files to SiteGround via SFTP
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.6
+        with:
+          server: ${{ secrets.SFTP_SERVER }}
+          username: ${{ secrets.SFTP_USERNAME }}
+          password: ${{ secrets.SFTP_PASSWORD }}
+          port: ${{ secrets.SFTP_PORT }}
+          local_path: './dist/*' # Lovable/Vite compiles production files into the 'dist' folder
+          remote_path: '/public_html' # Maps straight to your empty SiteGround container
+          delete_remote_files: true # Keeps your server clean by removing old files no longer in your code
