@@ -1,0 +1,119 @@
+name: Build & Deploy to SiteGround
+
+on:
+  push:
+    branches:
+      - main
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-deploy:
+    name: Build and Deploy Website
+    runs-on: ubuntu-latest
+
+    steps:
+
+      # --------------------------------------------------
+      # 1. Get the latest code from GitHub
+      # --------------------------------------------------
+      - name: Get latest code
+        uses: actions/checkout@v5
+
+      # --------------------------------------------------
+      # 2. Set up Node.js
+      # --------------------------------------------------
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      # --------------------------------------------------
+      # 3. Install dependencies
+      # --------------------------------------------------
+      - name: Install Dependencies
+        run: npm ci
+
+      # --------------------------------------------------
+      # 4. Build the website
+      # --------------------------------------------------
+      - name: Build Project
+        run: npm run build
+
+      # --------------------------------------------------
+      # 5. Confirm the static website was generated
+      # --------------------------------------------------
+      - name: Check Build Output
+        run: |
+          echo "Checking .output/public..."
+
+          if [ ! -d ".output/public" ]; then
+            echo "ERROR: .output/public does not exist."
+            echo ""
+            echo "Contents of the project:"
+            ls -la
+            exit 1
+          fi
+
+          echo ""
+          echo "Build output:"
+          find .output/public -maxdepth 3 -type f | sort
+
+          echo ""
+          echo "Build output size:"
+          du -sh .output/public
+
+      # --------------------------------------------------
+      # 6. Start SSH agent with SiteGround private key
+      # --------------------------------------------------
+      - name: Set up SSH key
+        uses: webfactory/ssh-agent@v0.9.1
+        with:
+          ssh-private-key: ${{ secrets.SITEGROUND_SSH_PRIVATE_KEY }}
+
+      # --------------------------------------------------
+      # 7. Add SiteGround to known hosts
+      # --------------------------------------------------
+      - name: Add SiteGround host key
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+
+          ssh-keyscan -p 18765 "${{ secrets.SITEGROUND_HOST }}" \
+            >> ~/.ssh/known_hosts
+
+          chmod 644 ~/.ssh/known_hosts
+
+      # --------------------------------------------------
+      # 8. Test SSH connection
+      # --------------------------------------------------
+      - name: Test SiteGround SSH connection
+        run: |
+          ssh \
+            -p 18765 \
+            "${{ secrets.SITEGROUND_USER }}@${{ secrets.SITEGROUND_HOST }}" \
+            "echo 'SSH connection to SiteGround successful'"
+
+      # --------------------------------------------------
+      # 9. Deploy website
+      # --------------------------------------------------
+      - name: Deploy files to SiteGround
+        run: |
+          rsync -avz --delete \
+            -e "ssh -p 18765" \
+            .output/public/ \
+            "${{ secrets.SITEGROUND_USER }}@${{ secrets.SITEGROUND_HOST }}:/home/customer/www/helixlogisticstt.com/public_html/"
+
+      # --------------------------------------------------
+      # 10. Verify deployment
+      # --------------------------------------------------
+      - name: Verify SiteGround deployment
+        run: |
+          ssh \
+            -p 18765 \
+            "${{ secrets.SITEGROUND_USER }}@${{ secrets.SITEGROUND_HOST }}" \
+            "echo 'Files currently in public_html:' && ls -la /home/customer/www/helixlogisticstt.com/public_html/"
