@@ -7,7 +7,7 @@ on:
 
 jobs:
   build-and-deploy:
-    name: 🎉 Build & SFTP Deploy
+    name: 🎉 Build & Diagnose
     runs-on: ubuntu-latest
 
     steps:
@@ -25,24 +25,7 @@ jobs:
       - name: 📦 Build Project
         run: npm run build
 
-      - name: 🔍 Check Build Output
-        run: |
-          echo "Current directory:"
-          pwd
-
-          echo ""
-          echo "Files in project:"
-          ls -la
-
-          echo ""
-          echo "Looking for build directories:"
-          find . -maxdepth 3 -type d \( -name "dist" -o -name "build" \) -print
-
-          echo ""
-          echo "Contents of dist if it exists:"
-          ls -la dist 2>/dev/null || true
-
-            - name: 🔎 Diagnose build and SiteGround paths
+      - name: 🔍 Diagnose Build and SiteGround
         env:
           SSH_KEY: ${{ secrets.SFTP_SSH_KEY }}
           HOST: ${{ secrets.SFTP_SERVER }}
