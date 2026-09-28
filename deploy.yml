@@ -1,0 +1,90 @@
+name: 🚀 Build and Deploy Lovable Site to SiteGround
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    name: 🎉 Build & Diagnose
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🚚 Get latest code
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 🔨 Install Dependencies
+        run: npm install
+
+      - name: 📦 Build Project
+        run: npm run build
+
+      - name: 🔍 Diagnose Build and SiteGround
+        env:
+          SSH_KEY: ${{ secrets.SFTP_SSH_KEY }}
+          HOST: ${{ secrets.SFTP_SERVER }}
+          USER: ${{ secrets.SFTP_USERNAME }}
+          PORT: ${{ secrets.SFTP_PORT }}
+        run: |
+          echo "========================================"
+          echo "GITHUB BUILD DIRECTORY"
+          echo "========================================"
+
+          echo "Current directory:"
+          pwd
+
+          echo ""
+          echo "Top-level files:"
+          ls -la
+
+          echo ""
+          echo "Looking for dist/build directories:"
+          find . -maxdepth 5 -type d \( -name "dist" -o -name "build" \) -print
+
+          echo ""
+          echo "Package scripts:"
+          cat package.json | grep -A 10 '"scripts"'
+
+          echo ""
+          echo "========================================"
+          echo "CONNECTING TO SITEGROUND"
+          echo "========================================"
+
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+
+          ssh-keyscan -p "$PORT" "$HOST" >> ~/.ssh/known_hosts
+
+          ssh \
+            -p "$PORT" \
+            -i ~/.ssh/deploy_key \
+            -o StrictHostKeyChecking=yes \
+            "$USER@$HOST" '
+              echo "HOME:"
+              echo "$HOME"
+
+              echo ""
+              echo "HOME CONTENTS:"
+              ls -la "$HOME"
+
+              echo ""
+              echo "WWW DIRECTORY:"
+              ls -la "$HOME/www" 2>/dev/null || true
+
+              echo ""
+              echo "CUSTOMER WWW:"
+              ls -la /home/customer/www 2>/dev/null || true
+
+              echo ""
+              echo "PUBLIC_HTML DIRECTORIES:"
+              find "$HOME" -maxdepth 5 -type d -name "public_html" -print 2>/dev/null
+            '
