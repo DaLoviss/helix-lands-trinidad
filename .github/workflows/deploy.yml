@@ -18,7 +18,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          # Removed the cache instruction that was breaking the build
 
       - name: 🔨 Install Dependencies
         run: npm install
@@ -31,9 +30,8 @@ jobs:
         with:
           server: ${{ secrets.SFTP_SERVER }}
           username: ${{ secrets.SFTP_USERNAME }}
-          password: ${{ secrets.SFTP_PASSWORD }}
+          ssh_private_key: ${{ secrets.SFTP_SSH_KEY }} # Swapped out password for the secure SSH key
           port: ${{ secrets.SFTP_PORT }}
           local_path: './dist/*' 
           remote_path: '/public_html' 
           delete_remote_files: true 
-
