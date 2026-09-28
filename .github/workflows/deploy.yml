@@ -25,14 +25,24 @@ jobs:
       - name: 📦 Build Project
         run: npm run build
 
-      - name: 📂 Deploy files to SiteGround via SSH
-        uses: easingthemes/ssh-deploy@v5.1.0
-        with:
-          SSH_PRIVATE_KEY: ${{ secrets.SFTP_SSH_KEY }}
-          ARGS: "-avz --delete"
-          REMOTE_HOST: ${{ secrets.SFTP_SERVER }}
-          port: ${{ secrets.SFTP_PORT }}
-          REMOTE_USER: ${{ secrets.SFTP_USERNAME }}
-          SOURCE: "dist/"
-          # SiteGround absolute path format uses /home/customer/www/hostname/public_html
-          TARGET: "/home/customer/www/gtxm1355.siteground.biz/public_html/"
+      - name: 📂 Deploy files to SiteGround via Rsync
+        env:
+          SSH_KEY: ${{ secrets.SFTP_SSH_KEY }}
+          HOST: ${{ secrets.SFTP_SERVER }}
+          USER: ${{ secrets.SFTP_USERNAME }}
+          PORT: ${{ secrets.SFTP_PORT }}
+        run: |
+          # 1. Setup a clean .ssh directory structure
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          
+          # 2. Write and secure the private key file
+          echo "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          
+          # 3. Scan the SiteGround host fingerprint to clear security warnings
+          ssh-keyscan -p $PORT $HOST >> ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+          
+          # 4. Execute the sync command using your explicit port number
+          rsync -avz --delete -e "ssh -p $PORT -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" ./dist/ $USER@$HOST:/home/customer/www/gtxm1355.siteground.biz/public_html/
