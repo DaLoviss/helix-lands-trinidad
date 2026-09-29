@@ -1,4 +1,4 @@
-name: Build & Deploy to SiteGround
+name: Deploy Helix Logistics to SiteGround
 
 on:
   push:
@@ -7,82 +7,105 @@ on:
 
   workflow_dispatch:
 
-permissions:
-  contents: read
-
 jobs:
   build-and-deploy:
     name: Build and Deploy Website
     runs-on: ubuntu-latest
 
     steps:
-
       # --------------------------------------------------
       # 1. Get the latest code from GitHub
       # --------------------------------------------------
-      - name: Get latest code
-        uses: actions/checkout@v5
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       # --------------------------------------------------
       # 2. Set up Node.js
       # --------------------------------------------------
       - name: Set up Node.js
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v4
         with:
-          node-version: 22
-    
+          node-version: "22"
 
       # --------------------------------------------------
-      # 3. Install dependencies
+      # 3. Install project dependencies
       # --------------------------------------------------
-      - name: Install Dependencies
+      - name: Install dependencies
         run: npm install
 
       # --------------------------------------------------
       # 4. Build the website
       # --------------------------------------------------
-      - name: Build Project
+      - name: Build website
         run: npm run build
 
       # --------------------------------------------------
-      # 5. Confirm the static website was generated
+      # 5. Verify that the static website was generated
       # --------------------------------------------------
-      - name: 🔍 Verify Static Output
-  run: |
-    echo "Static output:"
-    find .output/public -maxdepth 4 -type f -print | sort
+      - name: Check build output
+        run: |
+          echo "========================================"
+          echo "BUILD OUTPUT"
+          echo "========================================"
 
-    echo
-    echo "HTML pages:"
-    find .output/public -type f -name '*.html' -print | sort
+          if [ ! -d ".output/public" ]; then
+            echo "ERROR: .output/public does not exist."
+            echo "The build did not create the expected static output."
+            exit 1
+          fi
 
-    echo
-    echo "Checking for homepage..."
+          echo ""
+          echo "Files generated:"
+          find .output/public -maxdepth 4 -type f -print | sort
 
-    if [ ! -f ".output/public/index.html" ]; then
-      echo "ERROR: .output/public/index.html was NOT generated."
-      echo "The deployment will NOT continue."
-      exit 1
-    fi
+          echo ""
+          echo "========================================"
+          echo "HTML FILES"
+          echo "========================================"
 
-    echo "Homepage index.html found."
+          find .output/public -type f -name "*.html" -print | sort
 
-    echo
-    echo "Checking other pages..."
+          echo ""
+          echo "========================================"
+          echo "CHECKING HOMEPAGE"
+          echo "========================================"
 
-    for page in \
-      ".output/public/why-helix/index.html" \
-      ".output/public/serviceable-areas/index.html" \
-      ".output/public/contact/index.html"
-    do
-      if [ ! -f "$page" ]; then
-        echo "ERROR: Missing $page"
-        exit 1
-      fi
-    done
+          if [ ! -f ".output/public/index.html" ]; then
+            echo "ERROR: .output/public/index.html was NOT generated."
+            echo ""
+            echo "The deployment has been stopped."
+            echo "Your TanStack configuration must generate a static homepage."
+            exit 1
+          fi
 
-    echo
-    echo "All expected HTML pages were generated successfully."
+          echo "SUCCESS: Homepage index.html found."
+
+          echo ""
+          echo "========================================"
+          echo "CHECKING OTHER PAGES"
+          echo "========================================"
+
+          if [ ! -f ".output/public/why-helix/index.html" ]; then
+            echo "ERROR: Missing why-helix/index.html"
+            exit 1
+          fi
+
+          if [ ! -f ".output/public/serviceable-areas/index.html" ]; then
+            echo "ERROR: Missing serviceable-areas/index.html"
+            exit 1
+          fi
+
+          if [ ! -f ".output/public/contact/index.html" ]; then
+            echo "ERROR: Missing contact/index.html"
+            exit 1
+          fi
+
+          echo "SUCCESS: All expected HTML pages were generated."
+
+          echo ""
+          echo "========================================"
+          echo "BUILD VERIFICATION COMPLETE"
+          echo "========================================"
 
       # --------------------------------------------------
       # 6. Start SSH agent with SiteGround private key
@@ -100,8 +123,7 @@ jobs:
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
 
-          ssh-keyscan -p 18765 "${{ secrets.SITEGROUND_HOST }}" \
-            >> ~/.ssh/known_hosts
+          ssh-keyscan -p 18765 "${{ secrets.SITEGROUND_HOST }}" >> ~/.ssh/known_hosts
 
           chmod 644 ~/.ssh/known_hosts
 
@@ -112,25 +134,55 @@ jobs:
         run: |
           ssh \
             -p 18765 \
+            -o StrictHostKeyChecking=yes \
             "${{ secrets.SITEGROUND_USER }}@${{ secrets.SITEGROUND_HOST }}" \
-            "echo 'SSH connection to SiteGround successful'"
+            "echo 'SSH connection to SiteGround successful.'"
 
       # --------------------------------------------------
-      # 9. Deploy website
+      # 9. Make sure the SiteGround folder exists
+      # --------------------------------------------------
+      - name: Prepare SiteGround folder
+        run: |
+          ssh \
+            -p 18765 \
+            -o StrictHostKeyChecking=yes \
+            "${{ secrets.SITEGROUND_USER }}@${{ secrets.SITEGROUND_HOST }}" \
+            "mkdir -p /home/customer/www/helixlogisticstt.com/public_html"
+
+      # --------------------------------------------------
+      # 10. Upload the static website
       # --------------------------------------------------
       - name: Deploy files to SiteGround
         run: |
           rsync -avz --delete \
-            -e "ssh -p 18765" \
+            -e "ssh -p 18765 -o StrictHostKeyChecking=yes" \
             .output/public/ \
             "${{ secrets.SITEGROUND_USER }}@${{ secrets.SITEGROUND_HOST }}:/home/customer/www/helixlogisticstt.com/public_html/"
 
       # --------------------------------------------------
-      # 10. Verify deployment
+      # 11. Verify files exist on SiteGround
       # --------------------------------------------------
       - name: Verify SiteGround deployment
         run: |
+          echo "========================================"
+          echo "VERIFYING SITEGROUND DEPLOYMENT"
+          echo "========================================"
+
           ssh \
             -p 18765 \
+            -o StrictHostKeyChecking=yes \
             "${{ secrets.SITEGROUND_USER }}@${{ secrets.SITEGROUND_HOST }}" \
-            "echo 'Files currently in public_html:' && ls -la /home/customer/www/helixlogisticstt.com/public_html/" 
+            "echo 'Files in public_html:' && find /home/customer/www/helixlogisticstt.com/public_html -maxdepth 3 -type f | sort"
+
+          echo ""
+          echo "Checking homepage..."
+
+          ssh \
+            -p 18765 \
+            -o StrictHostKeyChecking=yes \
+            "${{ secrets.SITEGROUND_USER }}@${{ secrets.SITEGROUND_HOST }}" \
+            "test -f /home/customer/www/helixlogisticstt.com/public_html/index.html"
+
+          echo ""
+          echo "SUCCESS: index.html exists on SiteGround."
+          echo "Deployment completed successfully."
