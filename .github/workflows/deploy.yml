@@ -60,9 +60,9 @@ jobs:
        echo "Checking for homepage..."
 
        if [ ! -f ".output/public/index.html" ]; then
-        echo "ERROR: .output/public/index.html was NOT generated."
-        echo "The deployment will NOT continue."
-        exit 1
+         echo "ERROR: .output/public/index.html was NOT generated."
+         echo "The deployment will NOT continue."
+         exit 1
       fi
 
       echo "Homepage index.html found."
@@ -71,14 +71,14 @@ jobs:
       echo "Checking other pages..."
 
       for page in \
-      ".output/public/why-helix/index.html" \
-      ".output/public/serviceable-areas/index.html" \
-      ".output/public/contact/index.html"
+        ".output/public/why-helix/index.html" \
+        ".output/public/serviceable-areas/index.html" \
+        ".output/public/contact/index.html"
       do
-      if [ ! -f "$page" ]; then
+        if [ ! -f "$page" ]; then
         echo "ERROR: Missing $page"
         exit 1
-      fi
+       fi
      done
 
      echo
