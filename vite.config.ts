@@ -8,8 +8,46 @@ import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
 export default defineConfig({
   tanstackStart: {
-    // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
-    // nitro/vite builds from this
-    server: { entry: "server" },
+    prerender: {
+      enabled: true,
+      crawlLinks: true,
+      autoStaticPathsDiscovery: true,
+      failOnError: true,
+    },
+
+    pages: [
+      {
+        path: "/",
+        prerender: {
+          enabled: true,
+          outputPath: "/index.html",
+        },
+      },
+      {
+        path: "/why-helix",
+        prerender: {
+          enabled: true,
+          outputPath: "/why-helix/index.html",
+        },
+      },
+      {
+        path: "/serviceable-areas",
+        prerender: {
+          enabled: true,
+          outputPath: "/serviceable-areas/index.html",
+        },
+      },
+      {
+        path: "/contact",
+        prerender: {
+          enabled: true,
+          outputPath: "/contact/index.html",
+        },
+      },
+    ],
+
+    server: {
+      entry: "server",
+    },
   },
 });
