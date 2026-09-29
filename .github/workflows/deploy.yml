@@ -47,25 +47,42 @@ jobs:
       # --------------------------------------------------
       # 5. Confirm the static website was generated
       # --------------------------------------------------
-      - name: Check Build Output
+      - name: 🔍 Verify Static Output
         run: |
-          echo "Checking .output/public..."
+       echo "Static output:"
+       find .output/public -maxdepth 4 -type f -print | sort
 
-          if [ ! -d ".output/public" ]; then
-            echo "ERROR: .output/public does not exist."
-            echo ""
-            echo "Contents of the project:"
-            ls -la
-            exit 1
-          fi
+      echo
+      echo "HTML pages:"
+      find .output/public -type f -name '*.html' -print | sort
 
-          echo ""
-          echo "Build output:"
-          find .output/public -maxdepth 3 -type f | sort
+      echo
+      echo "Checking for homepage..."
 
-          echo ""
-          echo "Build output size:"
-          du -sh .output/public
+      if [ ! -f ".output/public/index.html" ]; then
+        echo "ERROR: .output/public/index.html was NOT generated."
+        echo "The deployment will NOT continue."
+        exit 1
+     fi
+
+     echo "Homepage index.html found."
+
+     echo
+     echo "Checking other pages..."
+
+     for page in \
+      ".output/public/why-helix/index.html" \
+      ".output/public/serviceable-areas/index.html" \
+      ".output/public/contact/index.html"
+    do
+      if [ ! -f "$page" ]; then
+        echo "ERROR: Missing $page"
+        exit 1
+      fi
+    done
+
+    echo
+    echo "All expected HTML pages were generated successfully."
 
       # --------------------------------------------------
       # 6. Start SSH agent with SiteGround private key
